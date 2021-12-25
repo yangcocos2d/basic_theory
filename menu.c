@@ -2,11 +2,7 @@
 #include <windows.h>
 #include <conio.h>
 
-//液晶屏尺寸参数
-#define LCD_LINE_START          (0 + 5)
-#define LCD_LINE_END            (3 + 5)
-#define LCD_COLUMN_START        (0 + 5)
-#define LCD_COLUMN_END          (15 + 5)
+#include "menu.h"
 
 //底层液晶驱动
 void LCD_OnxyPrint(char *buf, int startX, int startY)
@@ -31,24 +27,6 @@ void LCD_Clear()
         }
 }
 
-//-------------菜单项-----------------------
-typedef void *(*ItemFun_Typedef )(void *);
-
-typedef struct ST_LCD_ITEM
-{
-    int ItemID;
-
-    //菜单项在整个菜单中的位置
-    int ItemLast;
-    int ItemNext;
-    int ItemFather;
-    int ItemChildren;
-
-    char *ItemDisplayStr;
-    ItemFun_Typedef ItemFun;
-
-}ST_LCD_ITEM;
-
 //-------------菜单 -----------------------
 typedef struct ST_LCD_MENU
 {
@@ -65,67 +43,14 @@ typedef struct ST_STACK
     int* StackTop;
 }ST_STACK;
 
-extern void    MENU_ItemInitSet(ST_LCD_MENU* st_lcd_menu,ST_LCD_ITEM st_lcd_item[ ]);
-extern ST_LCD_ITEM* MENU_Enter(ST_LCD_MENU* st_lcd_menu);
-extern ST_LCD_ITEM* MENU_Exit(ST_LCD_MENU* st_lcd_menu);
-extern ST_LCD_ITEM* MENU_Next(ST_LCD_MENU* st_lcd_menu);
-extern ST_LCD_ITEM* MENU_Last(ST_LCD_MENU* st_lcd_menu);
-
-/*-------------------------------------------------------------------*/
-
-void PrintScore(ST_LCD_MENU* st_lcd_menu)
-{
-    LCD_Clear();
-    LCD_OnxyPrint("您的分数:100", LCD_LINE_START, LCD_COLUMN_START);
-    while(getch()!='a');
-}
-
-void PrintAward(ST_LCD_MENU* st_lcd_menu)
-{
-    LCD_Clear();
-    LCD_OnxyPrint("奖励糖果哦", LCD_LINE_START, LCD_COLUMN_START);
-    while(getch()!='a');
-}
-
 /*
 规定，菜单项编号为12位数字。
 前4位为菜单项级数，
 中4位为父菜单项在列表中的次序(无父菜单项则为0)，
 后4位为本菜单项在列表中的次序
 */
-ST_LCD_ITEM st_lcd_item[ ] =
-{
-    {100100000001,100000000000,100000000000,100000000000,100200010001,"欢迎",       MENU_Enter},
-    {100200010001,100000000000,100200010002,100100000001,100300010001,"1.英语",     MENU_Enter},
 
-    {100300010001,100000000000,100300010002,100200010001,100000000000,"1.分数",     PrintScore},
-    {100300010002,100300010001,100300010003,100200010001,100400020001,"2.排名",     MENU_Enter},
-    {100400020001,100000000000,100400020002,100300010002,100000000000,"1.升序",     NULL},
-    {100400020002,100400020001,100000000000,100300010002,100000000000,"2.降序",     NULL},
-
-    {100300010003,100300010002,100300010004,100200010001,100000000000,"3.档位",     NULL},
-    {100300010004,100300010003,100300010005,100200010001,100000000000,"4.是否及格",   NULL},
-    {100300010005,100300010004,100300010006,100200010001,100000000000,"5.是否优秀",   NULL},
-    {100300010006,100300010005,100000000000,100200010001,100000000000,"6.是否奖励",   PrintAward},
-
-    {100200010002,100200010001,100200010003,100100000001,100300020001,"2.数学",     MENU_Enter},
-    {100300020001,100000000000,100300020002,100200010002,100000000000,"1.分数",     NULL},
-    {100300020002,100300020001,100000000000,100200010002,100000000000,"2.排名",     NULL},
-
-    {100200010003,100200010002,100200010004,100100000001,100000000000,"3.语文",     NULL},
-
-    {100200010004,100200010003,100200010005,100100000001,100000000000,"4.物理",     NULL},
-    {100200010005,100200010004,100200010006,100100000001,100000000000,"5.生物",     NULL},
-    {100200010006,100200010005,100200010007,100100000001,100000000000,"6.化学",     NULL},
-    {100200010007,100200010006,100200010008,100100000001,100300010001,"7.地理",     MENU_Enter},
-
-    {100200010008,100200010007,100200010009,100100000001,100000000000,"8.体育",     NULL},
-    {100200010009,100200010008,100000000000,100100000001,100000000000,"9.思修",     NULL},
-
-    {000000000000,000000000000,000000000000,000000000000,000000000000,"NULL",   NULL},
-
-
-};
+ST_LCD_ITEM st_lcd_item[LCD_ITEM_SIZE];
 
 //栈
 void ST_STACK_Init(ST_STACK* stack,int* buffer_start,int* buffer_end)
@@ -162,7 +87,6 @@ void MENU_ItemInitSet(ST_LCD_MENU* st_lcd_menu,ST_LCD_ITEM st_lcd_item[ ] )
 {
     st_lcd_menu->st_lcd_item_list = &st_lcd_item[ 0];
     st_lcd_menu->st_lcd_item_current = &st_lcd_item[ 0];
-
 }
 
 ST_LCD_ITEM* MENU_ItemSearch(ST_LCD_MENU* st_lcd_menu,int ItemID)
@@ -183,10 +107,8 @@ ST_LCD_ITEM* MENU_ItemSearch(ST_LCD_MENU* st_lcd_menu,int ItemID)
             return pItem;
         }
         i++;
-
     }
     return pItem;
-
 }
 
 ST_LCD_ITEM* MENU_Trace(ST_LCD_MENU* st_lcd_menu,int item_id)
@@ -200,7 +122,6 @@ ST_LCD_ITEM* MENU_Trace(ST_LCD_MENU* st_lcd_menu,int item_id)
         st_lcd_menu->st_lcd_item_current = pItem;
     }
     return pItem;
-
 }
 
 ST_LCD_ITEM *MENU_Back(ST_LCD_MENU* st_lcd_menu,ST_STACK *stack)
@@ -215,7 +136,6 @@ ST_LCD_ITEM *MENU_Back(ST_LCD_MENU* st_lcd_menu,ST_STACK *stack)
         st_lcd_menu->st_lcd_item_current = pItem;
     }
     return pItem;
-
 }
 
 ST_LCD_ITEM* MENU_Enter(ST_LCD_MENU* st_lcd_menu)
@@ -238,30 +158,135 @@ ST_LCD_ITEM* MENU_Last(ST_LCD_MENU* st_lcd_menu)
     return MENU_Trace(st_lcd_menu,st_lcd_menu->st_lcd_item_current->ItemLast);
 }
 
-#define STACK_SIZE        256
+//全局变量
+static ST_LCD_ITEM* p;
+static int g_arrow_line = LCD_LINE_START;
+//箭头位置栈
+static int g_arrow_stack_buffer[LCD_STACK_SIZE];
+static ST_STACK g_arrow_stack;
+//菜单路径栈
+static int g_itemID_stack_buffer[LCD_STACK_SIZE];
+static ST_STACK g_itemID_stack;
+//菜单
+static ST_LCD_MENU g_menu;
+static ST_LCD_MENU g_menu_dis;
 
+void MENU_app_set_item(struct ST_LCD_ITEM *item,int item_index)
+{
+    if(item_index >= sizeof(st_lcd_item) / sizeof(st_lcd_item[0]))
+    {
+        return;
+    }
+    st_lcd_item[item_index] = *item;
+}
+
+void MENU_appInit()
+{
+    int i = 0;
+    for(i=0;i<sizeof(st_lcd_item) / sizeof(st_lcd_item[0]);i++)
+    {
+        st_lcd_item[i].ItemFun = MENU_Enter;
+    }
+    MENU_ItemInitSet(&g_menu,st_lcd_item );
+    MENU_ItemInitSet(&g_menu_dis,st_lcd_item );
+
+    ST_STACK_Init(&g_arrow_stack,&g_arrow_stack_buffer[0],&g_arrow_stack_buffer[LCD_STACK_SIZE-1]);
+    ST_STACK_Init(&g_itemID_stack,&g_itemID_stack_buffer[0],&g_itemID_stack_buffer[LCD_STACK_SIZE-1]);
+
+}
+
+void MENU_appLast()
+{
+    if(NULL != MENU_Last(&g_menu))
+    {
+        if(g_arrow_line>LCD_LINE_START) g_arrow_line--;
+    }
+}
+
+void MENU_appNext()
+{
+    if(NULL!=MENU_Next(&g_menu))
+    {
+        if(g_arrow_line<LCD_LINE_END) g_arrow_line++;
+    }
+}
+
+void MENU_appExit()
+{
+     MENU_Back(&g_menu,&g_itemID_stack);
+     g_arrow_line = ST_STACK_DataOut(&g_arrow_stack );
+}
+
+void MENU_appEnter()
+{
+    //MENU_Enter(&g_menu);
+    ST_LCD_MENU menu_pre = g_menu;
+    if(g_menu.st_lcd_item_current->ItemFun == MENU_Enter)
+    {
+        if(NULL!=g_menu.st_lcd_item_current->ItemFun(&g_menu))
+        {
+            ST_STACK_DataIn(&g_itemID_stack,menu_pre.st_lcd_item_current->ItemID);
+            ST_STACK_DataIn(&g_arrow_stack,g_arrow_line);
+            g_arrow_line = LCD_LINE_START;
+        }
+    }
+    else if(g_menu.st_lcd_item_current->ItemFun!=NULL)
+    {
+        g_menu.st_lcd_item_current->ItemFun(&g_menu);
+    }
+}
+
+void MENU_appUpdate()
+{
+    int i=0;
+     //把菜单页面显示在屏幕上
+    LCD_Clear();
+
+    g_menu_dis = g_menu;
+    LCD_OnxyPrint("----------------",LCD_COLUMN_START - 4, LCD_LINE_START - 1);
+    LCD_OnxyPrint("----------------",LCD_COLUMN_START - 4, LCD_LINE_END + 1);
+
+    LCD_OnxyPrint("◆",LCD_COLUMN_START, g_arrow_line);
+    LCD_OnxyPrint(g_menu_dis.st_lcd_item_current->ItemDisplayStr,LCD_COLUMN_START+2, g_arrow_line);
+
+    for(i=g_arrow_line-1;i>=LCD_LINE_START;i--)
+    {
+        p=MENU_Last(&g_menu_dis);
+        if(p!=NULL)
+        {    LCD_OnxyPrint("  ",LCD_COLUMN_START, i);
+            LCD_OnxyPrint(p->ItemDisplayStr,LCD_COLUMN_START+2, i);
+        }
+    }
+    g_menu_dis = g_menu;
+    for(i=g_arrow_line+1;i<=LCD_LINE_END;i++)
+    {
+        p = MENU_Next(&g_menu_dis);
+        if(p!=NULL)
+        {    LCD_OnxyPrint("  ",LCD_COLUMN_START, i);
+            LCD_OnxyPrint(p->ItemDisplayStr,LCD_COLUMN_START+2, i);
+        }
+    }
+
+    //展示路径
+    {
+        int *i,x=5;
+        LCD_OnxyPrint("path:                                                   ",0,10);
+        for(i = g_itemID_stack.StackBufferStart;i < g_itemID_stack.StackTop;i++)
+        {
+            ST_LCD_ITEM* item =  MENU_ItemSearch(&g_menu,*i);
+            LCD_OnxyPrint(item->ItemDisplayStr,x,10);
+            x+= strlen(item->ItemDisplayStr);
+            LCD_OnxyPrint(">",x,10);
+            x+=1;
+        }
+    }
+}
+
+/*
 void main()
 {
     char key=0;
-    int i=0;
-    int ArrowLine = LCD_LINE_START;
-    ST_LCD_ITEM* p;
-
-    //箭头位置栈
-    int arrow_stack_buffer[STACK_SIZE];
-    ST_STACK arrow_stack;
-
-    //菜单路径栈
-    int itemID_stack_buffer[STACK_SIZE];
-    ST_STACK itemID_stack;
-
-    ST_LCD_MENU menu;
-    ST_LCD_MENU menu_Dis;
-    MENU_ItemInitSet(&menu,st_lcd_item );
-    MENU_ItemInitSet(&menu_Dis,st_lcd_item );
-
-    ST_STACK_Init(&arrow_stack,&arrow_stack_buffer[0],&arrow_stack_buffer[STACK_SIZE-1]);
-    ST_STACK_Init(&itemID_stack,&itemID_stack_buffer[0],&itemID_stack_buffer[STACK_SIZE-1]);
+    MENU_appInit();
 
     while(1)
     {
@@ -271,85 +296,24 @@ void main()
 
             if(key == 'w')
             {
-                if(NULL != MENU_Last(&menu))
-                {
-                    if(ArrowLine>LCD_LINE_START) ArrowLine--;
-
-                }
+                MENU_appLast();
             }
             if(key == 's')
             {
-                if(NULL!=MENU_Next(&menu))
-                {
-                    if(ArrowLine<LCD_LINE_END) ArrowLine++;
-                }
+                MENU_appNext();
             }
             if(key == 'a')
             {
-                MENU_Back(&menu,&itemID_stack);
-                ArrowLine = ST_STACK_DataOut(&arrow_stack );
-
+                MENU_appExit();
             }
             if(key == 'd')
             {
-                //MENU_Enter(&menu);
-                ST_LCD_MENU menu_pre = menu;
-                if(menu.st_lcd_item_current->ItemFun == MENU_Enter)
-                {
-                    if(NULL!=menu.st_lcd_item_current->ItemFun(&menu))
-                    {
-                        ST_STACK_DataIn(&itemID_stack,menu_pre.st_lcd_item_current->ItemID);
-                        ST_STACK_DataIn(&arrow_stack,ArrowLine);
-                        ArrowLine = LCD_LINE_START;
-                    }
-                }
-                else if(menu.st_lcd_item_current->ItemFun!=NULL)
-                {
-                    menu.st_lcd_item_current->ItemFun(&menu);
-                }
+                MENU_appEnter();
             }
 
-            //把菜单页面显示在屏幕上
-            LCD_Clear();
+            MENU_appUpdate();
 
-            menu_Dis = menu;
-            LCD_OnxyPrint("----------------",LCD_COLUMN_START - 4, LCD_LINE_START - 1);
-            LCD_OnxyPrint("----------------",LCD_COLUMN_START - 4, LCD_LINE_END + 1);
-
-            LCD_OnxyPrint("◆",LCD_COLUMN_START, ArrowLine);
-            LCD_OnxyPrint(menu_Dis.st_lcd_item_current->ItemDisplayStr,LCD_COLUMN_START+2, ArrowLine);
-
-            for(i=ArrowLine-1;i>=LCD_LINE_START;i--)
-            {
-                p=MENU_Last(&menu_Dis);
-                if(p!=NULL)
-                {    LCD_OnxyPrint("  ",LCD_COLUMN_START, i);
-                    LCD_OnxyPrint(p->ItemDisplayStr,LCD_COLUMN_START+2, i);
-                }
-            }
-            menu_Dis = menu;
-            for(i=ArrowLine+1;i<=LCD_LINE_END;i++)
-            {
-                p = MENU_Next(&menu_Dis);
-                if(p!=NULL)
-                {    LCD_OnxyPrint("  ",LCD_COLUMN_START, i);
-                    LCD_OnxyPrint(p->ItemDisplayStr,LCD_COLUMN_START+2, i);
-                }
-            }
-
-            //展示路径
-            {
-                int *i,x=5;
-                LCD_OnxyPrint("path:                                                   ",0,10);
-                for(i = itemID_stack.StackBufferStart;i < itemID_stack.StackTop;i++)
-                {
-                    ST_LCD_ITEM* item =  MENU_ItemSearch(&menu,*i);
-                    LCD_OnxyPrint(item->ItemDisplayStr,x,10);
-                    x+= strlen(item->ItemDisplayStr);
-                    LCD_OnxyPrint(">",x,10);
-                    x+=1;
-                }
-            }
         }
     }
 }
+*/
